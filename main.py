@@ -8,7 +8,7 @@ from src.classes.jellyfin import Jellyfin
 from src.classes.parseargs import ParseArgs
 
 
-def update_userid(config_file: str, config: dict) -> bool:
+def update_config(config_file: str, config: dict) -> bool:
     try:
         with open(config_file, 'w') as file:
             yaml.safe_dump(config, file)
@@ -56,9 +56,35 @@ def main():
             print('Updating User ID...')
             jellyfin.config['jellyfin']['userid'] = userid
             jellyfin.userid = userid
-            result = update_userid(jellyfin.credentials_file, jellyfin.config)
+            result = update_config(jellyfin.credentials_file, jellyfin.config)
             if not result:
                 print('Unable to update config with User ID!')
+                exit(1)
+
+        if jellyfin.viewids is None:
+            print('You need to configure at least 1 Library!')
+            result = jellyfin.views()
+            if not result:
+                exit(1)
+
+            views = []
+            for item in jellyfin.view_list['Items']:
+                viewname = item['Name']
+                viewid = item['Id']
+                view = (viewname, viewid)
+                views.append(view)
+            ih = InputHelper()
+            viewids = ih.choose_view(views)
+            if len(viewids) == 0:
+                print('Unable to choose a Library!')
+                exit(1)
+
+            print('Updating Library IDs...')
+            jellyfin.config['jellyfin']['viewids'] = viewids
+            jellyfin.viewids = viewids
+            result = update_config(jellyfin.credentials_file, jellyfin.config)
+            if not result:
+                print('Unable to update config with Library IDs!')
                 exit(1)
 
 

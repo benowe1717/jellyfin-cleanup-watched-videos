@@ -14,6 +14,7 @@ class Jellyfin:
         }
         self.credentials_file = credentials_file
         self.user_list = []
+        self.view_list = {}
 
     @property
     def credentials_file(self) -> str:
@@ -46,6 +47,7 @@ class Jellyfin:
 
             config = self.config['jellyfin']
             self.userid = config['userid']
+            self.viewids = config['viewids']
         except KeyError:
             raise ValueError('Invalid credentials file')
 
@@ -72,4 +74,20 @@ class Jellyfin:
             print(r.status_code, r.text)
             return False
         self.user_list = r.json()
+        return True
+
+    def views(self) -> bool:
+        endpoint = f'/Users/{self.userid}/Views'
+        url = self.SCHEME + self.host + endpoint
+        r = requests.get(url=url, headers=self.headers)
+        if r.status_code == 401 or r.status_code == 400:
+            print('401 Unauthorized')
+            return False
+        if r.status_code != 200:
+            data = r.json()
+            data['status_code'] = r.status_code
+            print(', '.join('{}: {}'.format(key, value)
+                  for key, value in data.items()))
+            return False
+        self.view_list = r.json()
         return True

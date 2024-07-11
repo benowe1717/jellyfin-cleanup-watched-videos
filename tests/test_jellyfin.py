@@ -150,3 +150,41 @@ class TestJellyfin:
         assert self.jf.user_list[0]['Name'] == 'string'
         assert self.jf.user_list[0]['Id'] == '38a5a5bb-dc30-49a2-b175-1de0d1488c43'
         self.tearDown()
+
+    def test_views_failed_unauthenticated(self, requests_mock):
+        self.setUp()
+        endpoint = f'/Users/{self.jf.userid}/Views'
+        url = constants.JELLYFIN_API_SCHEME + self.jf.host + endpoint
+        status_code = 401
+        requests_mock.register_uri(
+            'GET', url, text='', status_code=status_code)
+        result = self.jf.views()
+        assert result is False
+        self.tearDown()
+
+    def test_views_failed_bad_request(self, requests_mock):
+        self.setUp()
+        endpoint = f'/Users/{self.jf.userid}/Views'
+        url = constants.JELLYFIN_API_SCHEME + self.jf.host + endpoint
+        status_code = 400
+        data = 'Error processing request.'
+        requests_mock.register_uri(
+            'GET', url, text=data, status_code=status_code)
+        result = self.jf.views()
+        assert result is False
+        self.tearDown()
+
+    def test_views(self, requests_mock):
+        self.setUp()
+        endpoint = f'/Users/{self.jf.userid}/Views'
+        url = constants.JELLYFIN_API_SCHEME + self.jf.host + endpoint
+        status_code = 200
+        with open('tests/data/views_response.json', 'r') as file:
+            data = file.read()
+        requests_mock.register_uri(
+            'GET', url, text=data, status_code=status_code)
+        result = self.jf.views()
+        assert result is True
+        views = self.jf.view_list['Items']
+        assert len(views) == 1
+        self.tearDown()
