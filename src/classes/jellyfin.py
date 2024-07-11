@@ -13,6 +13,7 @@ class Jellyfin:
             'Accept': 'application/json'
         }
         self.credentials_file = credentials_file
+        self.user_list = []
 
     @property
     def credentials_file(self) -> str:
@@ -28,18 +29,23 @@ class Jellyfin:
         if not fc.is_readable():
             raise ValueError('Not readable')
 
-        data = fc.is_yaml()
-        if not data:
+        result = fc.is_yaml()
+        if not result:
             raise ValueError('Not YAML')
 
         try:
-            credentials = data['credentials']  # type: ignore
+            self.config = fc.data
+
+            credentials = self.config['credentials']
             self._credentials_file = fc.file
             self.host = credentials['host']
             self.apikey = credentials['apikey']
 
             self.headers['Host'] = self.host
             self.headers['X-Emby-Token'] = self.apikey
+
+            config = self.config['jellyfin']
+            self.userid = config['userid']
         except KeyError:
             raise ValueError('Invalid credentials file')
 
@@ -56,4 +62,14 @@ class Jellyfin:
             print(', '.join('{}: {}'.format(key, value)
                   for key, value in data.items()))
             return False
+        return True
+
+    def users(self) -> bool:
+        endpoint = '/Users'
+        url = self.SCHEME + self.host + endpoint
+        r = requests.get(url=url, headers=self.headers)
+        if r.status_code != 200:
+            print(r.status_code, r.text)
+            return False
+        self.user_list = r.json()
         return True

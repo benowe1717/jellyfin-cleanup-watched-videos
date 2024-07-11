@@ -90,9 +90,10 @@ class TestFileChecker:
     def test_is_yaml(self):
         self.setUp()
         result = self.fc.is_yaml()
-        assert isinstance(result, dict)
-        assert 'credentials' in result.keys()
-        creds = result['credentials']
+        assert result is True
+        assert isinstance(self.fc.data, dict)
+        assert 'credentials' in self.fc.data.keys()
+        creds = self.fc.data['credentials']
         assert 'host' in creds.keys()
         assert 'apikey' in creds.keys()
         assert creds['host'] == 'subdomain.domain.tld'

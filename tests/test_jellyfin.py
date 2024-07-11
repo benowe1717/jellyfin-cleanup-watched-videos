@@ -110,3 +110,43 @@ class TestJellyfin:
         result = self.jf.test()
         assert result is True
         self.tearDown()
+
+    def test_users_failed_unauthenticated(self, requests_mock):
+        self.setUp()
+        endpoint = '/Users'
+        url = constants.JELLYFIN_API_SCHEME + self.jf.host + endpoint
+        status_code = 401
+        requests_mock.register_uri(
+            'GET', url, text='', status_code=status_code)
+        result = self.jf.users()
+        assert result is False
+        self.tearDown()
+
+    def test_users_failed_forbidden(self, requests_mock):
+        self.setUp()
+        endpoint = '/Users'
+        url = constants.JELLYFIN_API_SCHEME + self.jf.host + endpoint
+        status_code = 403
+        requests_mock.register_uri(
+            'GET', url, text='', status_code=status_code)
+        result = self.jf.users()
+        assert result is False
+        self.tearDown()
+
+    def test_users(self, requests_mock):
+        self.setUp()
+        endpoint = '/Users'
+        url = constants.JELLYFIN_API_SCHEME + self.jf.host + endpoint
+        status_code = 200
+        with open('tests/data/users_response.json', 'r') as file:
+            data = file.read()
+        requests_mock.register_uri(
+            'GET', url, text=data, status_code=status_code)
+        result = self.jf.users()
+        assert result is True
+        assert len(self.jf.user_list) == 1
+        assert 'Name' in self.jf.user_list[0].keys()
+        assert 'Id' in self.jf.user_list[0].keys()
+        assert self.jf.user_list[0]['Name'] == 'string'
+        assert self.jf.user_list[0]['Id'] == '38a5a5bb-dc30-49a2-b175-1de0d1488c43'
+        self.tearDown()
