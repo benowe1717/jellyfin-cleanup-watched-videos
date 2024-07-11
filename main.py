@@ -1,8 +1,20 @@
 #!/usr/bin/env python3
 import sys
 
+import yaml
+
+from src.classes.input_helper import InputHelper
 from src.classes.jellyfin import Jellyfin
 from src.classes.parseargs import ParseArgs
+
+
+def update_userid(config_file: str, config: dict) -> bool:
+    try:
+        with open(config_file, 'w') as file:
+            yaml.safe_dump(config, file)
+        return True
+    except BaseException:
+        return False
 
 
 def main():
@@ -16,6 +28,38 @@ def main():
         result = jellyfin.test()
         if result:
             print('Your credentials work!')
+            exit(0)
+        exit(1)
+
+    elif action == 'cleanup':
+        credentials_file = myparser.credentials
+        jellyfin = Jellyfin(credentials_file)
+
+        if jellyfin.userid is None:
+            print('You need to configure a User ID!')
+            result = jellyfin.users()
+            if not result:
+                exit(1)
+
+            users = []
+            for item in jellyfin.user_list:
+                username = item['Name']
+                userid = item['Id']
+                user = (username, userid)
+                users.append(user)
+            ih = InputHelper()
+            userid = ih.choose_user(users)
+            if not userid:
+                print('Unable to choose a User ID!')
+                exit(1)
+
+            print('Updating User ID...')
+            jellyfin.config['jellyfin']['userid'] = userid
+            jellyfin.userid = userid
+            result = update_userid(jellyfin.credentials_file, jellyfin.config)
+            if not result:
+                print('Unable to update config with User ID!')
+                exit(1)
 
 
 if __name__ == '__main__':

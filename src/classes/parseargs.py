@@ -42,6 +42,14 @@ class ParseArgs():
             help='Test the provided credentials against the Jellyfin API'
         )
 
+        self.parser.add_argument(
+            '-c',
+            '--cleanup',
+            action='store_true',
+            required=False,
+            help='Cleanup watched videos'
+        )
+
         self.parse_args = self.parser.parse_args()
 
         if len(self.args) == 1:
@@ -54,6 +62,16 @@ class ParseArgs():
 
         if self.parse_args.test:
             self.action = 'test'
+            if self.parse_args.credentials is None:
+                self.parser.error('--test requires --credentials')
+
+            result = self._is_valid_credentials_path(
+                self.parse_args.credentials[0])
+            if not result:
+                self.parser.error('Invalid credentials file')
+
+        if self.parse_args.cleanup:
+            self.action = 'cleanup'
             if self.parse_args.credentials is None:
                 self.parser.error('--test requires --credentials')
 

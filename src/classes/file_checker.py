@@ -46,12 +46,13 @@ class FileChecker:
             return False
         return True
 
-    def is_yaml(self) -> dict | bool:
+    def is_yaml(self) -> bool:
         try:
             with open(self.file, 'r') as f:
                 data = yaml.safe_load(f)
             if isinstance(data, dict):
-                return data
+                self.data = data
+                return True
             return False
         except yaml.YAMLError:
             return False
