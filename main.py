@@ -91,7 +91,11 @@ def main():
         if not result:
             print('Failed getting a list of Items!')
             exit(1)
-        print(jellyfin.item_list)
+
+        result = jellyfin.remove()
+        if not result:
+            print('Failed to remove items!')
+            exit(1)
 
 
 if __name__ == '__main__':

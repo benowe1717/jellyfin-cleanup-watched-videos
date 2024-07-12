@@ -229,3 +229,70 @@ class TestJellyfin:
         assert result is True
         assert len(self.jf.item_list) == 1
         self.tearDown()
+
+    def test_remove_failed_unauthenticated(self, requests_mock):
+        self.setUp()
+        id = 'some-fake-id'
+        name = 'some name'
+        item = (name, id)
+        self.jf.item_list.append(item)
+        endpoint = f'/Items/{id}'
+        url = constants.JELLYFIN_API_SCHEME + self.jf.host + endpoint
+        status_code = 401
+        with open('tests/data/401_response.json', 'r') as file:
+            data = file.read()
+        requests_mock.register_uri(
+            'DELETE', url, text=data, status_code=status_code)
+        result = self.jf.remove()
+        assert result is False
+        assert len(self.jf.failed_items) == 1
+        self.tearDown()
+
+    def test_remove_failed_forbidden(self, requests_mock):
+        self.setUp()
+        id = 'some-fake-id'
+        name = 'some name'
+        item = (name, id)
+        self.jf.item_list.append(item)
+        endpoint = f'/Items/{id}'
+        url = constants.JELLYFIN_API_SCHEME + self.jf.host + endpoint
+        status_code = 403
+        requests_mock.register_uri(
+            'DELETE', url, text='', status_code=status_code)
+        result = self.jf.remove()
+        assert result is False
+        assert len(self.jf.failed_items) == 1
+        self.tearDown()
+
+    def test_remove_failed_not_found(self, requests_mock):
+        self.setUp()
+        id = 'some-fake-id'
+        name = 'some name'
+        item = (name, id)
+        self.jf.item_list.append(item)
+        endpoint = f'/Items/{id}'
+        url = constants.JELLYFIN_API_SCHEME + self.jf.host + endpoint
+        status_code = 404
+        with open('tests/data/401_response.json', 'r') as file:
+            data = file.read()
+        requests_mock.register_uri(
+            'DELETE', url, text=data, status_code=status_code)
+        result = self.jf.remove()
+        assert result is False
+        assert len(self.jf.failed_items) == 1
+        self.tearDown()
+
+    def test_remove(self, requests_mock):
+        self.setUp()
+        id = 'some-fake-id'
+        name = 'some name'
+        item = (name, id)
+        self.jf.item_list.append(item)
+        endpoint = f'/Items/{id}'
+        url = constants.JELLYFIN_API_SCHEME + self.jf.host + endpoint
+        status_code = 204
+        requests_mock.register_uri(
+            'DELETE', url, text='', status_code=status_code)
+        result = self.jf.remove()
+        assert result is True
+        self.tearDown()
