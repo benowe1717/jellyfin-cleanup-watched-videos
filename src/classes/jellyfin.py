@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+import logging
+import logging.config
+
 import requests
 
 from src.classes.file_checker import FileChecker
@@ -16,6 +19,7 @@ class Jellyfin:
         self.user_list = []
         self.view_list = {}
         self.item_list = []
+        self.logger = logging.getLogger('jellyfinCleanup')
 
     @property
     def credentials_file(self) -> str:
@@ -77,6 +81,8 @@ class Jellyfin:
             data['status_code'] = r.status_code
             print(', '.join('{}: {}'.format(key, value)
                   for key, value in data.items()))
+            self.logger.info(', '.join('{}: {}'.format(key, value)
+                             for key, value in data.items()))
             return False
         return True
 
@@ -86,6 +92,7 @@ class Jellyfin:
         r = requests.get(url=url, headers=self.headers)
         if r.status_code != 200:
             print(r.status_code, r.text)
+            self.logger.info(f'ERROR: {r.status_code} {r.text}')
             return False
         self.user_list = r.json()
         return True
@@ -96,12 +103,15 @@ class Jellyfin:
         r = requests.get(url=url, headers=self.headers)
         if r.status_code == 401 or r.status_code == 400:
             print(r.status_code, r.text)
+            self.logger.info(f'ERROR: {r.status_code} {r.text}')
             return False
         if r.status_code != 200:
             data = r.json()
             data['status_code'] = r.status_code
             print(', '.join('{}: {}'.format(key, value)
                   for key, value in data.items()))
+            self.logger.info(', '.join('{}: {}'.format(key, value)
+                             for key, value in data.items()))
             return False
         self.view_list = r.json()
         return True
@@ -115,6 +125,7 @@ class Jellyfin:
             r = requests.get(url=url, headers=self.headers)
             if r.status_code == 401:
                 print('401 Unauthorized')
+                self.logger.info(f'ERROR: {r.status_code} {r.text}')
                 errors += 1
                 continue
 
@@ -123,6 +134,8 @@ class Jellyfin:
                 data['status_code'] = r.status_code
                 print(', '.join('{}: {}'.format(key, value)
                       for key, value in data.items()))
+                self.logger.info(', '.join('{}: {}'.format(key, value)
+                                           for key, value in data.items()))
                 errors += 1
                 continue
 
@@ -145,9 +158,12 @@ class Jellyfin:
         completed = 0
         errors = 0
         total = len(self.item_list)
+        self.logger.info(f'There are {total} items to remove...')
         self.failed_items = []
         for item in self.item_list:
             itemid = item[1]
+            itemname = item[0]
+            self.logger.info(f'Removing {itemname}...')
             endpoint = f'/Items/{itemid}'
             url = self.SCHEME + self.host + endpoint
             r = requests.delete(url=url, headers=self.headers)
@@ -156,11 +172,14 @@ class Jellyfin:
                 data['status_code'] = r.status_code
                 print(', '.join('{}: {}'.format(key, value)
                       for key, value in data.items()))
+                self.logger.info(', '.join('{}: {}'.format(key, value)
+                                           for key, value in data.items()))
                 errors += 1
                 self.failed_items.append(item)
                 continue
             elif r.status_code == 403:
                 print(r.status_code, r.text)
+                self.logger.info(f'ERROR: {r.status_code} {r.text}')
                 errors += 1
                 self.failed_items.append(item)
                 continue
@@ -169,6 +188,8 @@ class Jellyfin:
 
         if errors > 0:
             print(f'Failed to remove {errors} videos!')
+            self.logger.info(f'Unable to remove {errors} videos!')
             return False
         print(f'Successfully removed {completed} videos!')
+        self.logger.info(f'Successfully removed {completed}/{total} videos!')
         return True
