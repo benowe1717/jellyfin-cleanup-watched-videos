@@ -4,6 +4,17 @@ class InputHelper():
     def __init__(self) -> None:
         pass
 
+    def _go_again(self, msg: str) -> bool:
+        again = input(f'{msg} [Yes/no]: ')
+        again = again.lower().strip()
+        if again == 'no' or again == 'n':
+            return False
+        elif again != 'yes' and again != 'y':
+            print('That was not a valid response! ' + 'Stopping anyways...')
+            return False
+        else:
+            return True
+
     def _get_usernames(self, data: list) -> list:
         usernames = []
         for item in data:
@@ -11,6 +22,14 @@ class InputHelper():
             usernames.append(username)
         usernames.sort()
         return usernames
+
+    def _get_viewnames(self, data: list) -> list:
+        viewnames = []
+        for item in data:
+            viewname = item[0]
+            viewnames.append(viewname)
+        viewnames.sort()
+        return viewnames
 
     def _validate_choice(self, choices: list, choice: int) -> bool:
         total = len(choices)
@@ -29,6 +48,12 @@ class InputHelper():
         for user in users:
             if user[0] == username:
                 return user[1]
+        return ''
+
+    def _get_viewid_from_viewname(self, views: list, viewname: str) -> str:
+        for view in views:
+            if view[0] == viewname:
+                return view[1]
         return ''
 
     def choose_user(self, data: list) -> str:
@@ -51,3 +76,36 @@ class InputHelper():
             except BaseException:
                 print('That is not a valid number!')
                 continue
+
+    def choose_view(self, data: list) -> list:
+        viewids = []
+        more = True
+        msg = 'Do you want to add another Library?'
+        while more:
+            viewnames = self._get_viewnames(data)
+            self._print_list(viewnames)
+            choice = input(
+                'Enter the number of the Library you want to use: '
+            ).strip()
+
+            try:
+                choice = int(choice)
+                result = self._validate_choice(viewnames, choice)
+                if not result:
+                    print('That is not a valid choice!')
+                    continue
+
+                viewname = viewnames[choice]
+                viewid = self._get_viewid_from_viewname(data, viewname)
+                if not viewid:
+                    print('That is not a valid Library!')
+                    continue
+
+                viewids.append(viewid)
+            except BaseException:
+                print('That is not a valid number!')
+                continue
+
+            if not self._go_again(msg):
+                more = False
+        return viewids
