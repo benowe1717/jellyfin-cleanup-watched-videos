@@ -188,3 +188,44 @@ class TestJellyfin:
         views = self.jf.view_list['Items']
         assert len(views) == 1
         self.tearDown()
+
+    def test_items_failed_unauthenticated(self, requests_mock):
+        self.setUp()
+        endpoint = f'/Users/{self.jf.userid}/Items'
+        params = f'?Recursive=True&isPlayed=True&ParentId={self.jf.viewids[0]}'
+        url = constants.JELLYFIN_API_SCHEME + self.jf.host + endpoint + params
+        status_code = 401
+        requests_mock.register_uri(
+            'GET', url, text='', status_code=status_code)
+        result = self.jf.items()
+        assert result is False
+        self.tearDown()
+
+    def test_items_failed_bad_request(self, requests_mock):
+        self.setUp()
+        endpoint = f'/Users/{self.jf.userid}/Items'
+        params = f'?Recursive=True&isPlayed=True&ParentId={self.jf.viewids[0]}'
+        url = constants.JELLYFIN_API_SCHEME + self.jf.host + endpoint + params
+        status_code = 400
+        with open('tests/data/400_response.json', 'r') as file:
+            data = file.read()
+        requests_mock.register_uri(
+            'GET', url, text=data, status_code=status_code)
+        result = self.jf.items()
+        assert result is False
+        self.tearDown()
+
+    def test_items(self, requests_mock):
+        self.setUp()
+        endpoint = f'/Users/{self.jf.userid}/Items'
+        params = f'?Recursive=True&isPlayed=True&ParentId={self.jf.viewids[0]}'
+        url = constants.JELLYFIN_API_SCHEME + self.jf.host + endpoint + params
+        status_code = 200
+        with open('tests/data/item_response.json', 'r') as file:
+            data = file.read()
+        requests_mock.register_uri(
+            'GET', url, text=data, status_code=status_code)
+        result = self.jf.items()
+        assert result is True
+        assert len(self.jf.item_list) == 1
+        self.tearDown()
