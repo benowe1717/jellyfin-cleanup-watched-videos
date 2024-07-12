@@ -11,3 +11,6 @@ ARGPARSE_REPO = 'https://github.com/benowe1717/jellyfin-cleanup-watched-videos'
 
 # jellyfin
 JELLYFIN_API_SCHEME = 'https://'
+
+# logger
+EVENT_DATE_FORMAT = '%b %d %H:%M:%S'

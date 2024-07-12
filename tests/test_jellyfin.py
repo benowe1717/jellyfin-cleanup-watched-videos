@@ -110,3 +110,189 @@ class TestJellyfin:
         result = self.jf.test()
         assert result is True
         self.tearDown()
+
+    def test_users_failed_unauthenticated(self, requests_mock):
+        self.setUp()
+        endpoint = '/Users'
+        url = constants.JELLYFIN_API_SCHEME + self.jf.host + endpoint
+        status_code = 401
+        requests_mock.register_uri(
+            'GET', url, text='', status_code=status_code)
+        result = self.jf.users()
+        assert result is False
+        self.tearDown()
+
+    def test_users_failed_forbidden(self, requests_mock):
+        self.setUp()
+        endpoint = '/Users'
+        url = constants.JELLYFIN_API_SCHEME + self.jf.host + endpoint
+        status_code = 403
+        requests_mock.register_uri(
+            'GET', url, text='', status_code=status_code)
+        result = self.jf.users()
+        assert result is False
+        self.tearDown()
+
+    def test_users(self, requests_mock):
+        self.setUp()
+        endpoint = '/Users'
+        url = constants.JELLYFIN_API_SCHEME + self.jf.host + endpoint
+        status_code = 200
+        with open('tests/data/users_response.json', 'r') as file:
+            data = file.read()
+        requests_mock.register_uri(
+            'GET', url, text=data, status_code=status_code)
+        result = self.jf.users()
+        assert result is True
+        assert len(self.jf.user_list) == 1
+        assert 'Name' in self.jf.user_list[0].keys()
+        assert 'Id' in self.jf.user_list[0].keys()
+        assert self.jf.user_list[0]['Name'] == 'string'
+        assert self.jf.user_list[0]['Id'] == '38a5a5bb-dc30-49a2-b175-1de0d1488c43'
+        self.tearDown()
+
+    def test_views_failed_unauthenticated(self, requests_mock):
+        self.setUp()
+        endpoint = f'/Users/{self.jf.userid}/Views'
+        url = constants.JELLYFIN_API_SCHEME + self.jf.host + endpoint
+        status_code = 401
+        requests_mock.register_uri(
+            'GET', url, text='', status_code=status_code)
+        result = self.jf.views()
+        assert result is False
+        self.tearDown()
+
+    def test_views_failed_bad_request(self, requests_mock):
+        self.setUp()
+        endpoint = f'/Users/{self.jf.userid}/Views'
+        url = constants.JELLYFIN_API_SCHEME + self.jf.host + endpoint
+        status_code = 400
+        data = 'Error processing request.'
+        requests_mock.register_uri(
+            'GET', url, text=data, status_code=status_code)
+        result = self.jf.views()
+        assert result is False
+        self.tearDown()
+
+    def test_views(self, requests_mock):
+        self.setUp()
+        endpoint = f'/Users/{self.jf.userid}/Views'
+        url = constants.JELLYFIN_API_SCHEME + self.jf.host + endpoint
+        status_code = 200
+        with open('tests/data/views_response.json', 'r') as file:
+            data = file.read()
+        requests_mock.register_uri(
+            'GET', url, text=data, status_code=status_code)
+        result = self.jf.views()
+        assert result is True
+        views = self.jf.view_list['Items']
+        assert len(views) == 1
+        self.tearDown()
+
+    def test_items_failed_unauthenticated(self, requests_mock):
+        self.setUp()
+        endpoint = f'/Users/{self.jf.userid}/Items'
+        params = f'?Recursive=True&isPlayed=True&ParentId={self.jf.viewids[0]}'
+        url = constants.JELLYFIN_API_SCHEME + self.jf.host + endpoint + params
+        status_code = 401
+        requests_mock.register_uri(
+            'GET', url, text='', status_code=status_code)
+        result = self.jf.items()
+        assert result is False
+        self.tearDown()
+
+    def test_items_failed_bad_request(self, requests_mock):
+        self.setUp()
+        endpoint = f'/Users/{self.jf.userid}/Items'
+        params = f'?Recursive=True&isPlayed=True&ParentId={self.jf.viewids[0]}'
+        url = constants.JELLYFIN_API_SCHEME + self.jf.host + endpoint + params
+        status_code = 400
+        with open('tests/data/400_response.json', 'r') as file:
+            data = file.read()
+        requests_mock.register_uri(
+            'GET', url, text=data, status_code=status_code)
+        result = self.jf.items()
+        assert result is False
+        self.tearDown()
+
+    def test_items(self, requests_mock):
+        self.setUp()
+        endpoint = f'/Users/{self.jf.userid}/Items'
+        params = f'?Recursive=True&isPlayed=True&ParentId={self.jf.viewids[0]}'
+        url = constants.JELLYFIN_API_SCHEME + self.jf.host + endpoint + params
+        status_code = 200
+        with open('tests/data/item_response.json', 'r') as file:
+            data = file.read()
+        requests_mock.register_uri(
+            'GET', url, text=data, status_code=status_code)
+        result = self.jf.items()
+        assert result is True
+        assert len(self.jf.item_list) == 1
+        self.tearDown()
+
+    def test_remove_failed_unauthenticated(self, requests_mock):
+        self.setUp()
+        id = 'some-fake-id'
+        name = 'some name'
+        item = (name, id)
+        self.jf.item_list.append(item)
+        endpoint = f'/Items/{id}'
+        url = constants.JELLYFIN_API_SCHEME + self.jf.host + endpoint
+        status_code = 401
+        with open('tests/data/401_response.json', 'r') as file:
+            data = file.read()
+        requests_mock.register_uri(
+            'DELETE', url, text=data, status_code=status_code)
+        result = self.jf.remove()
+        assert result is False
+        assert len(self.jf.failed_items) == 1
+        self.tearDown()
+
+    def test_remove_failed_forbidden(self, requests_mock):
+        self.setUp()
+        id = 'some-fake-id'
+        name = 'some name'
+        item = (name, id)
+        self.jf.item_list.append(item)
+        endpoint = f'/Items/{id}'
+        url = constants.JELLYFIN_API_SCHEME + self.jf.host + endpoint
+        status_code = 403
+        requests_mock.register_uri(
+            'DELETE', url, text='', status_code=status_code)
+        result = self.jf.remove()
+        assert result is False
+        assert len(self.jf.failed_items) == 1
+        self.tearDown()
+
+    def test_remove_failed_not_found(self, requests_mock):
+        self.setUp()
+        id = 'some-fake-id'
+        name = 'some name'
+        item = (name, id)
+        self.jf.item_list.append(item)
+        endpoint = f'/Items/{id}'
+        url = constants.JELLYFIN_API_SCHEME + self.jf.host + endpoint
+        status_code = 404
+        with open('tests/data/401_response.json', 'r') as file:
+            data = file.read()
+        requests_mock.register_uri(
+            'DELETE', url, text=data, status_code=status_code)
+        result = self.jf.remove()
+        assert result is False
+        assert len(self.jf.failed_items) == 1
+        self.tearDown()
+
+    def test_remove(self, requests_mock):
+        self.setUp()
+        id = 'some-fake-id'
+        name = 'some name'
+        item = (name, id)
+        self.jf.item_list.append(item)
+        endpoint = f'/Items/{id}'
+        url = constants.JELLYFIN_API_SCHEME + self.jf.host + endpoint
+        status_code = 204
+        requests_mock.register_uri(
+            'DELETE', url, text='', status_code=status_code)
+        result = self.jf.remove()
+        assert result is True
+        self.tearDown()
