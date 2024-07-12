@@ -73,7 +73,7 @@ class ParseArgs():
         if self.parse_args.cleanup:
             self.action = 'cleanup'
             if self.parse_args.credentials is None:
-                self.parser.error('--test requires --credentials')
+                self.parser.error('--cleanup requires --credentials')
 
             result = self._is_valid_credentials_path(
                 self.parse_args.credentials[0])

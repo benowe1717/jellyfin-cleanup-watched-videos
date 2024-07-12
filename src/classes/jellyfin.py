@@ -176,20 +176,25 @@ class Jellyfin:
                                            for key, value in data.items()))
                 errors += 1
                 self.failed_items.append(item)
-                continue
             elif r.status_code == 403:
                 print(r.status_code, r.text)
                 self.logger.info(f'ERROR: {r.status_code} {r.text}')
                 errors += 1
                 self.failed_items.append(item)
-                continue
             elif r.status_code == 204:
                 completed += 1
+            else:
+                print(r.status_code, r.text)
+                self.logger.info(f'ERROR: {r.status_code} {r.text}')
+                errors += 1
+                self.failed_items.append(item)
 
         if errors > 0:
             print(f'Failed to remove {errors} videos!')
             self.logger.info(f'Unable to remove {errors} videos!')
             return False
-        print(f'Successfully removed {completed} videos!')
-        self.logger.info(f'Successfully removed {completed}/{total} videos!')
+        else:
+            print(f'Successfully removed {completed} videos!')
+            self.logger.info(
+                f'Successfully removed {completed}/{total} videos!')
         return True
