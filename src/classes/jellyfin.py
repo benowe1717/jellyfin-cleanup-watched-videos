@@ -49,8 +49,21 @@ class Jellyfin:
             config = self.config['jellyfin']
             self.userid = config['userid']
             self.viewids = config['viewids']
+            self.exclusions = config['exclusions']
         except KeyError:
             raise ValueError('Invalid credentials file')
+
+    def _is_excluded(self, name: str) -> bool:
+        if not self.exclusions:
+            return False
+
+        if len(self.exclusions) == 0:
+            return False
+
+        for item in self.exclusions:
+            if item.lower() in name.lower():
+                return True
+        return False
 
     def test(self) -> bool:
         endpoint = '/System/Info'
@@ -120,8 +133,9 @@ class Jellyfin:
             for item in data['Items']:
                 video_name = item['Name']
                 video_id = item['Id']
-                video = (video_name, video_id)
-                self.item_list.append(video)
+                if not self._is_excluded(video_name):
+                    video = (video_name, video_id)
+                    self.item_list.append(video)
 
         if errors > 0:
             return False
