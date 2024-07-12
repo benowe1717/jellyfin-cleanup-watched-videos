@@ -87,6 +87,12 @@ def main():
                 print('Unable to update config with Library IDs!')
                 exit(1)
 
+        result = jellyfin.items()
+        if not result:
+            print('Failed getting a list of Items!')
+            exit(1)
+        print(jellyfin.item_list)
+
 
 if __name__ == '__main__':
     main()
